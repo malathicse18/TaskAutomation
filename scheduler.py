@@ -1,40 +1,25 @@
-from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import datetime
+import schedule
 import time
+from datetime import datetime
+from database import get_scheduled_email_tasks, save_email_log
 from email_automation import send_emails
 
-def schedule_emails(args):
-    scheduler = BackgroundScheduler()
-    schedule_time = datetime.strptime(args.schedule, "%H:%M").time()
+def check_and_send_emails():
+    now = datetime.now()
+    current_time = now.strftime("%H:%M")
+    email_tasks = get_scheduled_email_tasks()
 
-    def job():
-        task = {
-            "emails": args.emails,
-            "subject": args.subject,
-            "message": args.message,
-            "attachment": args.attachment,
-            "schedule_time": args.schedule
-        }
-        send_emails(task)
+    for task in email_tasks:
+        if task["schedule_time"] == current_time:
+            send_emails(task)
+            task["sent"] = True
+            save_email_log(task["emails"], task["subject"], task["message"], "sent")
+            task.save()
 
-    scheduler.add_job(job, 'cron', hour=schedule_time.hour, minute=schedule_time.minute)
-    scheduler.start()
-
-    print(f"Scheduling email automation at {args.schedule}...")
-
-    try:
-        while True:
-            time.sleep(1)
-    except (KeyboardInterrupt, SystemExit):
-        scheduler.shutdown()
+# Schedule the job every minute
+schedule.every().minute.at(":00").do(check_and_send_emails)
 
 if __name__ == "__main__":
-    # Example usage
-    class Args:
-        emails = ["example@example.com"]
-        subject = "Test Email"
-        message = "Hello!"
-        attachment = None
-        schedule = "21:17"
-
-    schedule_emails(Args())
+    while True:
+        schedule.run_pending()
+        time.sleep(1)

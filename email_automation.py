@@ -77,34 +77,6 @@ def send_emails(task):
             save_email_log(email, subject, message, "failed", error_message)
             print(f"❌ Failed to send email to {email} - Check email_errors.log for details")
 
-# def email_automation(args):
-#     # Read email addresses from CSV
-#     try:
-#         with open(args.file, "r") as f:
-#             reader = csv.reader(f)
-#             emails = [row[0] for row in reader if row]
-#     except FileNotFoundError:
-#         print(f"❌ ERROR: File {args.file} not found!")
-#         return
-
-#     user_details = {
-#         "name": "User Name",  # Replace with actual user details
-#         "email": "user@example.com"  # Replace with actual user details
-#     }
-
-#     if args.schedule:
-#         save_email_task(emails, args.subject, args.message, args.attachment, args.schedule, user_details)
-#         from scheduler import schedule_emails
-#         schedule_emails(args)
-#     else:
-#         task = {
-#             "emails": emails,
-#             "subject": args.subject,
-#             "message": args.message,
-#             "attachment": args.attachment
-#         }
-#         send_emails(task)
-
 def email_automation(args):
     # Read email addresses from CSV
     try:
@@ -145,4 +117,3 @@ def email_automation(args):
             "attachment": args.attachment
         }
         send_emails(task)
-
