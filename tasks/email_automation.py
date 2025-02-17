@@ -7,7 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-from database import save_email_log, save_email_task, get_scheduled_email_tasks
+from database import save_email_log, save_email_task, get_scheduled_email_tasks, save_user_details
 from config import EMAIL_SENDER, EMAIL_PASSWORD, SMTP_SERVER, SMTP_PORT
 
 # Configure logging
@@ -22,15 +22,17 @@ def send_emails(task):
     emails = task["emails"]
     subject = task["subject"]
     message = task["message"]
-    attachment = task["attachment"]
+    attachment = task.get("attachment", None)
     schedule_time = task.get("schedule_time", "None")
+    user_details = task["user_details"]
 
     print(f"Running Email Automation with:\n"
           f"  📧 Emails: {len(emails)} recipients\n"
           f"  📝 Subject: {subject}\n"
           f"  💬 Message: {message}\n"
           f"  📎 Attachment: {attachment if attachment else 'None'}\n"
-          f"  ⏰ Schedule Time: {schedule_time}\n")
+          f"  ⏰ Schedule Time: {schedule_time}\n"
+          f"  👤 User: {user_details['name']} ({user_details['email']})\n")
 
     if not EMAIL_SENDER or not EMAIL_PASSWORD:
         print("❌ ERROR: Email credentials missing. Check .env file!")
@@ -100,20 +102,29 @@ def email_automation(args):
         print("No valid email addresses to send.")
         return
 
+    # Ensure user details are provided
+    if not args.user_name:
+        print("❌ ERROR: User name is required!")
+        return
+
     user_details = {
-        "name": "User Name",  # Replace with actual user details
-        "email": "user@example.com"  # Replace with actual user details
+        "name": args.user_name,
+        "email": args.user_email
+    }
+
+    task = {
+        "emails": valid_emails,
+        "subject": args.subject,
+        "message": args.message,
+        "attachment": getattr(args, "attachment", None),
+        "user_details": user_details
     }
 
     if args.schedule:
-        save_email_task(valid_emails, args.subject, args.message, args.attachment, args.schedule, user_details)
+        task["schedule_time"] = args.schedule
+        save_email_task(valid_emails, args.subject, args.message, task["attachment"], args.schedule, user_details)
         from scheduler import schedule_emails
+
         schedule_emails(args)
     else:
-        task = {
-            "emails": valid_emails,
-            "subject": args.subject,
-            "message": args.message,
-            "attachment": args.attachment
-        }
         send_emails(task)
