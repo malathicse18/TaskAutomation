@@ -79,3 +79,24 @@ def save_csv_file_to_db(csv_file_path, user_id):
             fs.put(file, filename=f'{user_id}_emails.csv')
         except Exception as e:
             logging.error(f"Failed to save CSV file - Reason: {str(e)}")
+import pymongo
+from datetime import datetime
+from config import DB_CONNECTION_URL
+import logging
+
+# Configure MongoDB connection
+client = pymongo.MongoClient(DB_CONNECTION_URL)
+db = client["TaskAutomation"]
+web_scraping_tasks_collection = db["web_scraping_tasks"]
+
+def save_web_scraping_task(keyword, scraped_data, user_id):
+    task_data = {
+        "user_id": user_id,
+        "keyword": keyword,
+        "scraped_data": scraped_data,
+        "created_at": datetime.now()
+    }
+    try:
+        web_scraping_tasks_collection.insert_one(task_data)
+    except Exception as e:
+        logging.error(f"Failed to save web scraping task - Reason: {str(e)}")
