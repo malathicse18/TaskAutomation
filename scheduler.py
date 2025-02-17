@@ -2,7 +2,7 @@ import schedule
 import time
 from datetime import datetime
 from database import get_scheduled_email_tasks, save_email_log
-from email_automation import send_emails
+from tasks.email_automation import send_emails
 
 def check_and_send_emails():
     now = datetime.now()
