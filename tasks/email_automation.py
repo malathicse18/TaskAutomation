@@ -7,7 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-from database import save_email_log, save_email_task, get_scheduled_email_tasks, save_user_details
+from database import save_email_log, save_email_task, get_scheduled_email_tasks, save_user_details_in_task
 from config import EMAIL_SENDER, EMAIL_PASSWORD, SMTP_SERVER, SMTP_PORT
 
 # Configure logging

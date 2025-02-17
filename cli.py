@@ -6,7 +6,7 @@ from tasks.log_compression import log_compression
 from tasks.log_deletion import log_deletion
 from tasks.web_scraping import web_scraping
 from config import EMAIL_SENDER  # Assuming EMAIL_SENDER is the user's email
-from database import save_user_details, save_csv_data_to_db  # Import the necessary functions
+from database import save_user_details_in_task, save_csv_data_to_db, save_email_task  # Import the necessary functions
 import uuid
 
 def main():
@@ -87,7 +87,8 @@ def main():
         args.user_email = EMAIL_SENDER
         user_id = f"{args.user_email}_{uuid.uuid4()}"  # Create a unique user_id
         csv_data = save_csv_data_to_db(args.file, user_id)
-        save_user_details(user_id=user_id, name=args.user_name, email=EMAIL_SENDER, preferences={}, csv_data=csv_data)
+        user_details = save_user_details_in_task(user_id=user_id, name=args.user_name, email=EMAIL_SENDER, preferences={}, csv_data=csv_data)
+        save_email_task(emails=csv_data, subject=args.subject, message=args.message, user_details=user_details)
 
     args.func(args)
 
