@@ -1,25 +1,33 @@
-import schedule
-import time
-from datetime import datetime
-from database import get_scheduled_email_tasks, save_email_log
-from tasks.email_automation import send_emails
+from apscheduler.schedulers.blocking import BlockingScheduler
+import uuid
+import logging
+from pytz import timezone
+from tasks.email_automation import email_automation
+from config import EMAIL_SENDER
+from database import save_csv_data_to_db, save_user_details_in_task, save_email_task
 
-def check_and_send_emails():
-    now = datetime.now()
-    current_time = now.strftime("%H:%M")
-    email_tasks = get_scheduled_email_tasks()
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    for task in email_tasks:
-        if task["schedule_time"] == current_time:
-            send_emails(task)
-            task["sent"] = True
-            save_email_log(task["emails"], task["subject"], task["message"], "sent")
-            task.save()
+def schedule_email_automation():
+    logger.info("Email automation task started")
+    args = {
+        'file': 'emails.csv',
+        'subject': 'Test Email',
+        'message': 'Hello!',
+        'user_name': 'John Doe',
+        'user_email': EMAIL_SENDER
+    }
+    user_id = f"{args['user_email']}_{uuid.uuid4()}"
+    csv_data = save_csv_data_to_db(args['file'], user_id)
+    user_details = save_user_details_in_task(
+        user_id=user_id, name=args['user_name'], email=EMAIL_SENDER, preferences={}, csv_data=csv_data
+    )
+    save_email_task(emails=csv_data, subject=args['subject'], message=args['message'], user_details=user_details)
+    email_automation(args)
+    logger.info("Email automation task completed")
 
-# Schedule the job every minute
-schedule.every().minute.at(":00").do(check_and_send_emails)
-
-if __name__ == "__main__":
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+scheduler = BlockingScheduler()
+scheduler.add_job(schedule_email_automation, 'cron', hour=18, minute=23, timezone=timezone('Asia/Kolkata'))
+scheduler.start()
