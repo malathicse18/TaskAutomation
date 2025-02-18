@@ -22,7 +22,11 @@ gold_rates_collection = db["gold_rates"]  # Collection for gold rates
 
 # Ensure indexes for better performance (add more as needed)
 email_tasks_collection.create_index("schedule_time")
-email_tasks_collection.create_index("emails.email", unique=True)
+email_tasks_collection.create_index(
+    [("emails.email", pymongo.ASCENDING)],
+    unique=True,
+    partialFilterExpression={"emails.email": {"$exists": True}}
+)
 gold_rates_collection.create_index("date", unique=True)  # Index for gold rates date
 
 def save_email_task(emails, subject, message, attachment=None, schedule_time=None, user_details=None):
@@ -97,22 +101,22 @@ def save_web_scraping_task(url, scraped_data, user_details):
 def store_gold_rate(data):
     try:
         # Check for existing record (using date as primary key)
-        print(f"Storing data: {data}")  # Add this line to check the data being stored
+        print(f"Storing data: {data}")
         existing_record = gold_rates_collection.find_one({"date": data['date']})
 
         if existing_record:
-            print("Updating existing record")  # Add this line
+            print("Updating existing record")
             gold_rates_collection.update_one(
                 {"date": data['date']},
                 {"$set": {"24K": data['24K'], "22K": data['22K']}}
             )
         else:
-            print("Inserting new record")  # Add this line
+            print("Inserting new record")
             gold_rates_collection.insert_one(data)
 
-    except pymongo.errors.PyMongoError as e:  # Catch MongoDB specific errors
+    except pymongo.errors.PyMongoError as e:
         logging.error(f"MongoDB error storing gold rate: {e}")
-        raise  # Re-raise to handle it in cli.py
+        raise
     except Exception as e:
         logging.error(f"An unexpected error occurred while storing gold rate data: {e}")
-        raise  # Re-raise to handle it in cli.py
+        raise

@@ -3,27 +3,27 @@ import os
 import csv
 import logging
 import re
+import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-from database import save_email_log, save_email_task, get_scheduled_email_tasks, save_user_details_in_task
 from config import EMAIL_SENDER, EMAIL_PASSWORD, SMTP_SERVER, SMTP_PORT
 
 # Configure logging
 logging.basicConfig(filename='email_errors.log', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def is_valid_email(email):
-    # Simple regex for validating an email address
-    regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(regex, email) is not None
 
 def send_emails(task):
+    from database import save_email_log  # Import inside the function to avoid circular import
+
     emails = task["emails"]
     subject = task["subject"]
     message = task["message"]
     attachment = task.get("attachment", None)
-    schedule_time = task.get("schedule_time", "None")
     user_details = task["user_details"]
 
     print(f"Running Email Automation with:\n"
@@ -31,7 +31,6 @@ def send_emails(task):
           f"  📝 Subject: {subject}\n"
           f"  💬 Message: {message}\n"
           f"  📎 Attachment: {attachment if attachment else 'None'}\n"
-          f"  ⏰ Schedule Time: {schedule_time}\n"
           f"  👤 User: {user_details['name']} ({user_details['email']})\n")
 
     if not EMAIL_SENDER or not EMAIL_PASSWORD:
@@ -80,16 +79,16 @@ def send_emails(task):
             print(f"❌ Failed to send email to {email} - Check email_errors.log for details")
 
 def email_automation(args):
-    # Read email addresses from CSV
+    from database import save_email_task, save_user_details_in_task  # Import inside the function to avoid circular import
+
     try:
-        with open(args.file, "r") as f:
+        with open(args['file'], "r") as f:
             reader = csv.reader(f)
             emails = [row[0] for row in reader if row]
     except FileNotFoundError:
-        print(f"❌ ERROR: File {args.file} not found!")
+        print(f"❌ ERROR: File {args['file']} not found!")
         return
 
-    # Filter valid and invalid emails
     valid_emails = [email for email in emails if is_valid_email(email)]
     invalid_emails = [email for email in emails if not is_valid_email(email)]
 
@@ -102,29 +101,23 @@ def email_automation(args):
         print("No valid email addresses to send.")
         return
 
-    # Ensure user details are provided
-    if not args.user_name:
+    if not args['user_name']:
         print("❌ ERROR: User name is required!")
         return
 
     user_details = {
-        "name": args.user_name,
-        "email": args.user_email
+        "user_id": f"{args['user_email']}_{uuid.uuid4()}",
+        "name": args['user_name'],
+        "email": args['user_email']
     }
 
     task = {
         "emails": valid_emails,
-        "subject": args.subject,
-        "message": args.message,
+        "subject": args['subject'],
+        "message": args['message'],
         "attachment": getattr(args, "attachment", None),
         "user_details": user_details
     }
 
-    if args.schedule:
-        task["schedule_time"] = args.schedule
-        save_email_task(valid_emails, args.subject, args.message, task["attachment"], args.schedule, user_details)
-        from scheduler import schedule_emails
-
-        schedule_emails(args)
-    else:
-        send_emails(task)
+    save_email_task(valid_emails, args['subject'], args['message'], task.get("attachment", None), args.get('schedule'), user_details)
+    send_emails(task)
