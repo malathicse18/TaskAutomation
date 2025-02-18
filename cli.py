@@ -5,13 +5,26 @@ from tasks.email_automation import email_automation
 from tasks.file_conversion import file_conversion
 from tasks.log_compression import log_compression
 from tasks.log_deletion import log_deletion
-from tasks.web_scraping import web_scraping_task  # Updated import
-from config import EMAIL_SENDER  # Assuming EMAIL_SENDER is the sender's email
-from database import save_user_details_in_task, save_csv_data_to_db, save_email_task  # Import necessary functions
+from config import EMAIL_SENDER
+from database import save_user_details_in_task, save_csv_data_to_db, save_email_task, save_web_scraping_task, store_gold_rate
+from tasks.web_scraping import scrape_website
 
 def web_scraping(args):
-    user_details = {"user_id": "example_user_id"}  # Replace with actual user details
-    web_scraping_task(args.keyword, user_details)
+    user_id = f"example_user_{uuid.uuid4()}"
+    user_details = {"user_id": user_id, "name": "Example User", "email": EMAIL_SENDER}
+
+    gold_data = scrape_website(args.url)
+    print(f"Scraped Data: {gold_data}")  # Add this line to check the scraped data
+
+    if gold_data:
+        try:
+            store_gold_rate(gold_data)
+            save_web_scraping_task(args.url, gold_data, user_details)
+            print("Gold rate data stored successfully.")
+        except Exception as e:
+            print(f"Error storing data: {e}")
+    else:
+        print("Failed to scrape gold rate data.")
 
 def main():
     parser = argparse.ArgumentParser(description="📌 CLI Utility Tool - Automate various tasks")
@@ -23,8 +36,8 @@ def main():
         help="📧 Automate email sending",
         description="📧 Automate email sending\n\n"
                     "Example usage:\n"
-                    "  python cli.py email_automation -f emails.csv -s 'Test Email' -m 'Hello!' --user_name 'John Doe'\n"
-                    "  python cli.py email_automation -f emails.csv -s 'Test Email' -m 'Hello!' --schedule '14:30' --user_name 'John Doe'\n",
+                    " python cli.py email_automation -f emails.csv -s 'Test Email' -m 'Hello!' --user_name 'John Doe'\n"
+                    " python cli.py email_automation -f emails.csv -s 'Test Email' -m 'Hello!' --schedule '14:30' --user_name 'John Doe'\n",
         formatter_class=argparse.RawTextHelpFormatter
     )
     email_parser.add_argument("-f", "--file", required=True, help="📂 CSV file with email addresses")
@@ -40,7 +53,7 @@ def main():
         help="🔄 Automate file conversion",
         description="🔄 Automate file conversion\n\n"
                     "Example usage:\n"
-                    "  python cli.py file_conversion -i input.txt -o output.pdf\n",
+                    " python cli.py file_conversion -i input.txt -o output.pdf\n",
         formatter_class=argparse.RawTextHelpFormatter
     )
     file_conversion_parser.add_argument("-i", "--input", required=True, help="📂 Input file")
@@ -53,7 +66,7 @@ def main():
         help="📦 Automate log compression",
         description="📦 Automate log compression\n\n"
                     "Example usage:\n"
-                    "  python cli.py log_compression -d /path/to/logs\n",
+                    " python cli.py log_compression -d /path/to/logs\n",
         formatter_class=argparse.RawTextHelpFormatter
     )
     log_compression_parser.add_argument("-d", "--directory", required=True, help="📂 Directory with logs")
@@ -65,23 +78,22 @@ def main():
         help="🗑️ Automate log deletion",
         description="🗑️ Automate log deletion\n\n"
                     "Example usage:\n"
-                    "  python cli.py log_deletion -d /path/to/logs\n",
+                    " python cli.py log_deletion -d /path/to/logs\n",
         formatter_class=argparse.RawTextHelpFormatter
     )
     log_deletion_parser.add_argument("-d", "--directory", required=True, help="📂 Directory with logs")
     log_deletion_parser.set_defaults(func=log_deletion)
 
-    # Web Scraping (Updated for Keyword Search)
+    # Web Scraping (Modified)
     web_scraping_parser = subparsers.add_parser(
         "web_scraping",
         help="🌐 Automate web scraping",
-        description="🌐 Automate web scraping based on keywords\n\n"
+        description="🌐 Automate web scraping and store gold rates.\n\n"
                     "Example usage:\n"
-                    "  python cli.py web_scraping -k 'Python Programming' -o output.csv\n",
+                    " python cli.py web_scraping -u <URL>\n",
         formatter_class=argparse.RawTextHelpFormatter
     )
-    web_scraping_parser.add_argument("-k", "--keyword", required=True, help="🔍 Keyword to search")
-    web_scraping_parser.add_argument("-o", "--output", required=True, help="📂 Output file")
+    web_scraping_parser.add_argument("-u", "--url", required=True, help="🔗 URL of the website to scrape")
     web_scraping_parser.set_defaults(func=web_scraping)
 
     args = parser.parse_args()
@@ -96,7 +108,10 @@ def main():
         )
         save_email_task(emails=csv_data, subject=args.subject, message=args.message, user_details=user_details)
 
-    args.func(args)
+    try:
+        args.func(args)  # Call the appropriate function (including web_scraping)
+    except Exception as e:  # Catch any exceptions from the functions called
+        print(f"A general error occurred: {e}")
 
 if __name__ == "__main__":
     main()

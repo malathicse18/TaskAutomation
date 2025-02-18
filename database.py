@@ -1,6 +1,6 @@
 import pymongo
 from datetime import datetime
-from config import DB_CONNECTION_URL
+from config import DB_CONNECTION_URL  # Make sure this points to your MongoDB connection string
 import logging
 import csv
 from gridfs import GridFS
@@ -8,7 +8,7 @@ import uuid
 
 # Configure MongoDB connection
 client = pymongo.MongoClient(DB_CONNECTION_URL)
-db = client["TaskAutomation"]
+db = client["TaskAutomation"]  # Your database name
 fs = GridFS(db)
 
 # Collections for each task
@@ -18,10 +18,12 @@ file_conversion_tasks_collection = db["file_conversion_tasks"]
 log_compression_tasks_collection = db["log_compression_tasks"]
 log_deletion_tasks_collection = db["log_deletion_tasks"]
 web_scraping_tasks_collection = db["web_scraping_tasks"]
+gold_rates_collection = db["gold_rates"]  # Collection for gold rates
 
-# Ensure indexes for better performance
+# Ensure indexes for better performance (add more as needed)
 email_tasks_collection.create_index("schedule_time")
 email_tasks_collection.create_index("emails.email", unique=True)
+gold_rates_collection.create_index("date", unique=True)  # Index for gold rates date
 
 def save_email_task(emails, subject, message, attachment=None, schedule_time=None, user_details=None):
     task_data = {
@@ -70,7 +72,7 @@ def save_user_details_in_task(user_id, name, email, preferences, csv_data=None):
 def save_csv_data_to_db(csv_file_path, user_id):
     with open(csv_file_path, 'r') as file:
         reader = csv.DictReader(file)
-        csv_data = [{"email": row["email"]} for row in reader]
+        csv_data = [{"email": row["email"]} for row in reader]  # Adapt if your CSV has more columns
         return csv_data
 
 def save_csv_file_to_db(csv_file_path, user_id):
@@ -79,20 +81,11 @@ def save_csv_file_to_db(csv_file_path, user_id):
             fs.put(file, filename=f'{user_id}_emails.csv')
         except Exception as e:
             logging.error(f"Failed to save CSV file - Reason: {str(e)}")
-import pymongo
-from datetime import datetime
-from config import DB_CONNECTION_URL
-import logging
 
-# Configure MongoDB connection
-client = pymongo.MongoClient(DB_CONNECTION_URL)
-db = client["TaskAutomation"]
-web_scraping_tasks_collection = db["web_scraping_tasks"]
-
-def save_web_scraping_task(keyword, scraped_data, user_id):
+def save_web_scraping_task(url, scraped_data, user_details):
     task_data = {
-        "user_id": user_id,
-        "keyword": keyword,
+        "user_id": user_details["user_id"],
+        "url": url,
         "scraped_data": scraped_data,
         "created_at": datetime.now()
     }
@@ -100,3 +93,26 @@ def save_web_scraping_task(keyword, scraped_data, user_id):
         web_scraping_tasks_collection.insert_one(task_data)
     except Exception as e:
         logging.error(f"Failed to save web scraping task - Reason: {str(e)}")
+
+def store_gold_rate(data):
+    try:
+        # Check for existing record (using date as primary key)
+        print(f"Storing data: {data}")  # Add this line to check the data being stored
+        existing_record = gold_rates_collection.find_one({"date": data['date']})
+
+        if existing_record:
+            print("Updating existing record")  # Add this line
+            gold_rates_collection.update_one(
+                {"date": data['date']},
+                {"$set": {"24K": data['24K'], "22K": data['22K']}}
+            )
+        else:
+            print("Inserting new record")  # Add this line
+            gold_rates_collection.insert_one(data)
+
+    except pymongo.errors.PyMongoError as e:  # Catch MongoDB specific errors
+        logging.error(f"MongoDB error storing gold rate: {e}")
+        raise  # Re-raise to handle it in cli.py
+    except Exception as e:
+        logging.error(f"An unexpected error occurred while storing gold rate data: {e}")
+        raise  # Re-raise to handle it in cli.py
