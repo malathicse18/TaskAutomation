@@ -1,33 +1,65 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
-import uuid
 import logging
 from pytz import timezone
-from tasks.email_automation import email_automation
-from config import EMAIL_SENDER
-from database import save_csv_data_to_db, save_user_details_in_task, save_email_task
+from tasks.email_automation import send_emails
+from database import get_scheduled_email_tasks
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(filename='scheduler.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+print("Starting scheduler...")
 
 def schedule_email_automation():
+    """Runs the email automation task."""
     logger.info("Email automation task started")
-    args = {
-        'file': 'emails.csv',
-        'subject': 'Test Email',
-        'message': 'Hello!',
-        'user_name': 'John Doe',
-        'user_email': EMAIL_SENDER
-    }
-    user_id = f"{args['user_email']}_{uuid.uuid4()}"
-    csv_data = save_csv_data_to_db(args['file'], user_id)
-    user_details = save_user_details_in_task(
-        user_id=user_id, name=args['user_name'], email=EMAIL_SENDER, preferences={}, csv_data=csv_data
-    )
-    save_email_task(emails=csv_data, subject=args['subject'], message=args['message'], user_details=user_details)
-    email_automation(args)
-    logger.info("Email automation task completed")
+    print("Email automation task started")
+    try:
+        tasks = get_scheduled_email_tasks()
+        task_count = 0
+        for task in tasks:
+            send_emails(task)
+            task_count += 1
+        logger.info(f"Email automation task completed. Processed {task_count} tasks.")
+        print(f"Email automation task completed. Processed {task_count} tasks.")
+    except Exception as e:
+        logger.error(f"Error in email automation task: {str(e)}")
+        print(f"Error in email automation task: {str(e)}")
+
+def get_schedule_details():
+    """Fetches the scheduling details from the database."""
+    tasks = get_scheduled_email_tasks()
+    if tasks and len(tasks) > 0:
+        task = tasks[0]  # Get the first scheduled task
+        logger.info(f"Found scheduled task: {task}")
+        print(f"Found scheduled task: {task}")
+        return task['schedule_hour'], task['schedule_minute'], task['frequency']
+    else:
+        logger.error("No scheduled email tasks found in the database.")
+        print("No scheduled email tasks found in the database.")
+        return None, None, None
 
 scheduler = BlockingScheduler()
-scheduler.add_job(schedule_email_automation, 'cron', hour=18, minute=23, timezone=timezone('Asia/Kolkata'))
-scheduler.start()
+
+# Fetch scheduling details from the database
+hour, minute, frequency = get_schedule_details()
+print(f"Scheduling details - Hour: {hour}, Minute: {minute}, Frequency: {frequency}")
+
+if hour is not None and minute is not None and frequency is not None:
+    # Set the job based on the fetched scheduling details
+    if frequency == 'daily':
+        logger.info(f"Scheduling daily email automation at {hour}:{minute}")
+        print(f"Scheduling daily email automation at {hour}:{minute}")
+        scheduler.add_job(schedule_email_automation, 'cron', hour=hour, minute=minute, timezone=timezone('Asia/Kolkata'))
+    elif frequency == 'weekly':
+        logger.info(f"Scheduling weekly email automation at {hour}:{minute}")
+        print(f"Scheduling weekly email automation at {hour}:{minute}")
+        scheduler.add_job(schedule_email_automation, 'cron', day_of_week='mon', hour=hour, minute=minute, timezone=timezone('Asia/Kolkata'))
+    else:
+        logger.error(f"Unsupported frequency: {frequency}")
+        print(f"Unsupported frequency: {frequency}")
+
+    print("Scheduler started...")
+    scheduler.start()
+else:
+    logger.error("Failed to schedule email automation due to missing scheduling details.")
+    print("Failed to schedule email automation due to missing scheduling details.")
