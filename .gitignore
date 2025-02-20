@@ -9,3 +9,5 @@ email_errors.log
 
 # Ignore Python cache files
 __pycache__/
+# Ignore Python csv files
+emails.csv

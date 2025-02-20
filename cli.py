@@ -1,8 +1,10 @@
 import argparse
 import uuid
+import time
+from datetime import datetime, timedelta
 from config import EMAIL_SENDER
 from database import save_user_details_in_task, save_csv_data_to_db, save_email_task, save_web_scraping_task, store_gold_rate
-from tasks.email_automation import email_automation
+from tasks.email_automation import process_email_task
 from tasks.file_conversion import file_conversion
 from tasks.log_compression import log_compression
 from tasks.log_deletion import log_deletion
@@ -25,6 +27,15 @@ def schedule_email_automation(args):
         schedule_hour=args['schedule_hour'], schedule_minute=args['schedule_minute'], frequency=args['frequency']
     )
     logger.info("Email automation task completed")
+
+def wait_until_schedule(hour, minute):
+    now = datetime.now()
+    scheduled_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if scheduled_time < now:
+        scheduled_time += timedelta(days=1)
+    wait_time = (scheduled_time - now).total_seconds()
+    logger.info(f"Waiting for {wait_time} seconds until the scheduled time.")
+    time.sleep(wait_time)
 
 def web_scraping(args):
     user_id = f"example_user_{uuid.uuid4()}"
@@ -124,6 +135,10 @@ def main():
             schedule_hour=args.schedule_hour, schedule_minute=args.schedule_minute, frequency=args.frequency
         )
         logger.info(f"Scheduled email automation task for {args.user_name} at {args.schedule_hour}:{args.schedule_minute} {args.frequency}")
+        user_details['subject'] = args.subject  # Ensure the subject key is included
+        user_details['message'] = args.message  # Ensure the message key is included
+        wait_until_schedule(args.schedule_hour, args.schedule_minute)  # Wait until the scheduled time
+        process_email_task(user_details)  # Process the email task immediately
 
     try:
         if args.command != "email_automation":
