@@ -5,7 +5,7 @@
 venv/
 
 # Ignore specific log file
-email_errors.log
+.log
 
 # Ignore Python cache files
 __pycache__/
