@@ -7,7 +7,24 @@ from email.mime.text import MIMEText
 from smtplib import SMTP
 from config import RECIPIENTS_CSV_PATH, SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
 
-logging.basicConfig(filename='email_automation.log', level=logging.INFO)
+log_file_path = os.path.abspath("app.log")
+
+logging.basicConfig(
+    filename=log_file_path,
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",  # Corrected format string
+    filemode="w",  # Overwrites each time, use "a" to append
+    force=True,  # Ensures the config is applied even if logging was already set
+)
+
+# Add console logging (optional)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+console_handler.setFormatter(formatter)
+logging.getLogger().addHandler(console_handler)
+
+logging.info("Logging setup complete. Logs will be stored in app.log.")
 
 def is_valid_email(email):
     regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
@@ -39,30 +56,11 @@ def create_email(recipient_email, user_data):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Email Template</title>
         <style>
-            body {{
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-            }}
-            .container {{
-                width: 80%;
-                margin: auto;
-                padding: 20px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                background-color: #f9f9f9;
-            }}
-            .header {{
-                text-align: center;
-                padding-bottom: 20px;
-            }}
-            .content {{
-                margin-bottom: 20px;
-            }}
-            .footer {{
-                text-align: center;
-                font-size: 0.9em;
-                color: #777;
-            }}
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; }}
+            .container {{ width: 80%; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; }}
+            .header {{ text-align: center; padding-bottom: 20px; }}
+            .content {{ margin-bottom: 20px; }}
+            .footer {{ text-align: center; font-size: 0.9em; color: #777; }}
         </style>
     </head>
     <body>
@@ -102,10 +100,11 @@ def send_email(msg):
             server.send_message(msg)
             logging.info(f"Email sent to {msg['To']}")
     except Exception as e:
-        logging.error(f"Failed to send email: {e}")
+        logging.error(f"Failed to send email to {msg['To']}: {e}")
 
 def process_email_task(user_data):
     valid_recipients, invalid_recipients = read_recipients_from_csv(RECIPIENTS_CSV_PATH)
+    
     if invalid_recipients:
         logging.warning(f"Invalid email addresses found: {', '.join(invalid_recipients)}")
         print(f"Invalid email addresses found: {', '.join(invalid_recipients)}")
@@ -119,3 +118,5 @@ def process_email_task(user_data):
         msg = create_email(recipient, user_data)
         if msg:
             send_email(msg)
+
+    logging.info("Email processing completed.")

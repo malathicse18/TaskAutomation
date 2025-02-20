@@ -23,13 +23,11 @@ gold_rates_collection = db["gold_rates"]
 # Create indexes safely
 def create_index_safe(collection, keys, **kwargs):
     """Creates an index safely without duplicate conflicts."""
-    existing_indexes = collection.index_information()
     index_key = tuple(keys) if isinstance(keys, list) else (keys,)
 
-    for index in existing_indexes.values():
-        if index.get("key") == list(index_key):
-            logging.info(f"Index {index_key} already exists in {collection.name}. Skipping...")
-            return
+    if any(index.get("key") == list(index_key) for index in collection.index_information().values()):
+        logging.info(f"Index {index_key} already exists in {collection.name}. Skipping...")
+        return
 
     try:
         collection.create_index(keys, **kwargs)
@@ -43,7 +41,7 @@ create_index_safe(email_tasks_collection, [("emails.email", pymongo.ASCENDING)],
 create_index_safe(gold_rates_collection, "date", unique=True)
 
 # Function to save email task
-def save_email_task(emails, subject, message, attachment=None, schedule_hour=None, schedule_minute=None, frequency=None, user_details=None):
+def save_email_task(user_details, emails, subject, message, attachment=None, schedule_hour=None, schedule_minute=None, frequency=None):
     task_data = {
         "_id": str(uuid.uuid4()),
         "user_id": user_details["user_id"],
@@ -64,7 +62,7 @@ def save_email_task(emails, subject, message, attachment=None, schedule_hour=Non
     except pymongo.errors.DuplicateKeyError:
         logging.error("Duplicate email entry detected. Skipping task.")
     except pymongo.errors.PyMongoError as e:
-        logging.error(f"Failed to save email task - Reason: {e}")
+        logging.error(f"Failed to save email task - Reason: {e}", exc_info=True)
 
 # Function to log email sending results
 def save_email_log(email, subject, message, status, error_message=None):
@@ -80,7 +78,7 @@ def save_email_log(email, subject, message, status, error_message=None):
         email_logs_collection.insert_one(log_data)
         logging.info(f"Email log saved for: {email}, Status: {status}")
     except pymongo.errors.PyMongoError as e:
-        logging.error(f"Failed to save email log - Reason: {e}")
+        logging.error(f"Failed to save email log - Reason: {e}", exc_info=True)
 
 # Fetch scheduled email tasks safely
 def get_scheduled_email_tasks():
@@ -89,7 +87,7 @@ def get_scheduled_email_tasks():
             {"schedule_hour": {"$ne": None}, "schedule_minute": {"$ne": None}, "frequency": {"$ne": None}}
         )
     except pymongo.errors.PyMongoError as e:
-        logging.error(f"Error fetching scheduled email tasks: {e}")
+        logging.error(f"Error fetching scheduled email tasks: {e}", exc_info=True)
         return []
 
 # Save user details inside task
@@ -105,12 +103,13 @@ def save_user_details_in_task(user_id, name, email, preferences, csv_data=None):
 # Store CSV file contents in DB
 def save_csv_data_to_db(csv_file_path, user_id):
     try:
-        with open(csv_file_path, 'r') as file:
+        with open(csv_file_path, 'r', encoding='utf-8') as file:
             reader = csv.DictReader(file)
             csv_data = [{"email": row["email"]} for row in reader]
+        logging.info(f"CSV data read successfully from {csv_file_path}")
         return csv_data
     except Exception as e:
-        logging.error(f"Error reading CSV file {csv_file_path}: {e}")
+        logging.error(f"Error reading CSV file {csv_file_path}: {e}", exc_info=True)
         return []
 
 # Save CSV file as GridFS in MongoDB
@@ -120,7 +119,7 @@ def save_csv_file_to_db(csv_file_path, user_id):
             fs.put(file, filename=f'{user_id}_emails.csv')
         logging.info(f"CSV file stored in MongoDB for user: {user_id}")
     except pymongo.errors.PyMongoError as e:
-        logging.error(f"Failed to save CSV file - Reason: {e}")
+        logging.error(f"Failed to save CSV file - Reason: {e}", exc_info=True)
 
 # Save web scraping results
 def save_web_scraping_task(url, scraped_data, user_details):
@@ -135,7 +134,7 @@ def save_web_scraping_task(url, scraped_data, user_details):
         web_scraping_tasks_collection.insert_one(task_data)
         logging.info(f"Web scraping task saved successfully for URL: {url}")
     except pymongo.errors.PyMongoError as e:
-        logging.error(f"Failed to save web scraping task - Reason: {e}")
+        logging.error(f"Failed to save web scraping task - Reason: {e}", exc_info=True)
 
 # Store gold rate data with optimized update logic
 def store_gold_rate(data):
@@ -148,8 +147,8 @@ def store_gold_rate(data):
         )
         logging.info("Gold rate data stored successfully.")
     except pymongo.errors.PyMongoError as e:
-        logging.error(f"MongoDB error storing gold rate: {e}")
+        logging.error(f"MongoDB error storing gold rate: {e}", exc_info=True)
         raise
     except Exception as e:
-        logging.error(f"Unexpected error storing gold rate data: {e}")
+        logging.error(f"Unexpected error storing gold rate data: {e}", exc_info=True)
         raise

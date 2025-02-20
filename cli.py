@@ -12,19 +12,26 @@ from tasks.web_scraping import scrape_website
 import logging
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
 
 def schedule_email_automation(args):
     logger.info("Email automation task started")
-    user_id = f"{args['user_email']}_{uuid.uuid4()}"
-    csv_data = save_csv_data_to_db(args['file'], user_id)
+    user_id = f"{args.user_email}_{uuid.uuid4()}"
+    csv_data = save_csv_data_to_db(args.file, user_id)
     user_details = save_user_details_in_task(
-        user_id=user_id, name=args['user_name'], email=EMAIL_SENDER, preferences={}, csv_data=csv_data
+        user_id=user_id, name=args.user_name, email=EMAIL_SENDER, preferences={}, csv_data=csv_data
     )
     save_email_task(
-        emails=csv_data, subject=args['subject'], message=args['message'], user_details=user_details,
-        schedule_hour=args['schedule_hour'], schedule_minute=args['schedule_minute'], frequency=args['frequency']
+        emails=csv_data, subject=args.subject, message=args.message, user_details=user_details,
+        schedule_hour=args.schedule_hour, schedule_minute=args.schedule_minute, frequency=args.frequency
     )
     logger.info("Email automation task completed")
 
@@ -42,17 +49,17 @@ def web_scraping(args):
     user_details = {"user_id": user_id, "name": "Example User", "email": EMAIL_SENDER}
 
     gold_data = scrape_website(args.url)
-    print(f"Scraped Data: {gold_data}")
+    logger.info(f"Scraped Data: {gold_data}")
 
     if gold_data:
         try:
             store_gold_rate(gold_data)
             save_web_scraping_task(args.url, gold_data, user_details)
-            print("Gold rate data stored successfully.")
+            logger.info("Gold rate data stored successfully.")
         except Exception as e:
-            print(f"Error storing data: {e}")
+            logger.error(f"Error storing data: {e}", exc_info=True)
     else:
-        print("Failed to scrape gold rate data.")
+        logger.error("Failed to scrape gold rate data.")
 
 def main():
     parser = argparse.ArgumentParser(description="📌 CLI Utility Tool - Automate various tasks")
@@ -70,9 +77,9 @@ def main():
     email_parser.add_argument("-f", "--file", required=True, help="📂 CSV file with email addresses")
     email_parser.add_argument("-s", "--subject", required=True, help="📝 Email subject")
     email_parser.add_argument("-m", "--message", required=True, help="💬 Email message")
-    email_parser.add_argument("--schedule_hour", type=int, required=True, help="⏰ Schedule hour (0-23)")
-    email_parser.add_argument("--schedule_minute", type=int, required=True, help="⏰ Schedule minute (0-59)")
-    email_parser.add_argument("--frequency", choices=['daily', 'weekly'], required=True, help="🔄 Frequency of the email task")
+    email_parser.add_argument("--schedule_hour", type=int, help="⏰ Schedule hour (0-23)")
+    email_parser.add_argument("--schedule_minute", type=int, help="⏰ Schedule minute (0-59)")
+    email_parser.add_argument("--frequency", choices=['daily', 'weekly'], help="🔄 Frequency of the email task")
     email_parser.add_argument("--user_name", required=True, help="👤 User name")
     email_parser.set_defaults(func=schedule_email_automation)
 
@@ -137,14 +144,17 @@ def main():
         logger.info(f"Scheduled email automation task for {args.user_name} at {args.schedule_hour}:{args.schedule_minute} {args.frequency}")
         user_details['subject'] = args.subject  # Ensure the subject key is included
         user_details['message'] = args.message  # Ensure the message key is included
-        wait_until_schedule(args.schedule_hour, args.schedule_minute)  # Wait until the scheduled time
+
+        if args.schedule_hour is not None and args.schedule_minute is not None:
+            wait_until_schedule(args.schedule_hour, args.schedule_minute)  # Wait until the scheduled time
+
         process_email_task(user_details)  # Process the email task immediately
 
     try:
         if args.command != "email_automation":
             args.func(vars(args))  # Pass the arguments as a dictionary
     except Exception as e:
-        logger.error(f"A general error occurred: {e}")
+        logger.error(f"A general error occurred: {e}", exc_info=True)
 
 if __name__ == "__main__":
     main()
