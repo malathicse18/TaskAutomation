@@ -1,0 +1,4 @@
+2025-02-21 17:35:43,127 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-02-21 17:35:43,128 - __main__ - INFO - Scheduler started.
+2025-02-21 17:35:43,130 - apscheduler.scheduler - INFO - Added job "scheduled_task" to job store "default"
+2025-02-21 17:35:43,131 - apscheduler.scheduler - INFO - Scheduler started

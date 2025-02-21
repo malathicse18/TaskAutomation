@@ -1,0 +1,55 @@
+2025-02-21 17:52:15,592 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-02-21 17:52:15,593 - __main__ - INFO - Scheduler started.
+2025-02-21 17:52:15,594 - apscheduler.scheduler - INFO - Added job "schedule_file_conversion.<locals>.scheduled_task" to job store "default"
+2025-02-21 17:52:15,595 - apscheduler.scheduler - INFO - Scheduler started
+2025-02-21 17:54:15,612 - apscheduler.executors.default - INFO - Running job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 17:54:15 IST)" (scheduled at 2025-02-21 17:54:15.592232+05:30)
+2025-02-21 17:54:15,612 - __main__ - ERROR - Error during file conversion: [WinError 3] The system cannot find the path specified: 'input_directory'
+2025-02-21 17:54:15,624 - apscheduler.executors.default - INFO - Job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 17:56:15 IST)" executed successfully
+2025-02-21 17:56:15,596 - apscheduler.executors.default - INFO - Running job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 17:58:15 IST)" (scheduled at 2025-02-21 17:56:15.592232+05:30)
+2025-02-21 17:56:15,598 - __main__ - ERROR - Error during file conversion: [WinError 3] The system cannot find the path specified: 'input_directory'
+2025-02-21 17:56:15,598 - apscheduler.executors.default - INFO - Job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 17:58:15 IST)" executed successfully
+2025-02-21 17:58:03,383 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-02-21 17:58:03,384 - __main__ - INFO - Scheduler started.
+2025-02-21 17:58:03,385 - apscheduler.scheduler - INFO - Added job "schedule_file_conversion.<locals>.scheduled_task" to job store "default"
+2025-02-21 17:58:03,386 - apscheduler.scheduler - INFO - Scheduler started
+2025-02-21 18:02:25,663 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-02-21 18:02:25,664 - __main__ - INFO - Scheduler started.
+2025-02-21 18:02:25,665 - apscheduler.scheduler - INFO - Added job "schedule_file_conversion.<locals>.scheduled_task" to job store "default"
+2025-02-21 18:02:25,665 - apscheduler.scheduler - INFO - Scheduler started
+2025-02-21 18:04:25,679 - apscheduler.executors.default - INFO - Running job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 18:04:25 IST)" (scheduled at 2025-02-21 18:04:25.663071+05:30)
+2025-02-21 18:04:25,703 - __main__ - INFO - File conversion task completed successfully.
+2025-02-21 18:04:25,704 - apscheduler.executors.default - INFO - Job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 18:06:25 IST)" executed successfully
+2025-02-21 18:06:25,666 - apscheduler.executors.default - INFO - Running job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 18:08:25 IST)" (scheduled at 2025-02-21 18:06:25.663071+05:30)
+2025-02-21 18:06:25,681 - __main__ - INFO - File conversion task completed successfully.
+2025-02-21 18:06:25,682 - apscheduler.executors.default - INFO - Job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 18:08:25 IST)" executed successfully
+2025-02-21 21:06:24,672 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-02-21 21:06:24,674 - __main__ - INFO - Scheduler started.
+2025-02-21 21:06:24,677 - apscheduler.scheduler - INFO - Added job "schedule_file_conversion.<locals>.scheduled_task" to job store "default"
+2025-02-21 21:06:24,678 - apscheduler.scheduler - INFO - Scheduler started
+2025-02-21 21:08:24,679 - apscheduler.executors.default - INFO - Running job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 21:08:24 IST)" (scheduled at 2025-02-21 21:08:24.672625+05:30)
+2025-02-21 21:08:24,735 - __main__ - INFO - File conversion task completed successfully.
+2025-02-21 21:08:24,735 - apscheduler.executors.default - INFO - Job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 21:10:24 IST)" executed successfully
+2025-02-21 21:10:17,036 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-02-21 21:10:17,037 - __main__ - INFO - Scheduler started.
+2025-02-21 21:10:17,038 - apscheduler.scheduler - INFO - Added job "schedule_file_conversion.<locals>.scheduled_task" to job store "default"
+2025-02-21 21:10:17,039 - apscheduler.scheduler - INFO - Scheduler started
+2025-02-21 21:12:17,055 - apscheduler.executors.default - INFO - Running job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 21:12:17 IST)" (scheduled at 2025-02-21 21:12:17.036744+05:30)
+2025-02-21 21:12:17,073 - __main__ - INFO - File conversion task completed successfully.
+2025-02-21 21:12:17,074 - apscheduler.executors.default - INFO - Job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 21:14:17 IST)" executed successfully
+2025-02-21 21:13:49,421 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-02-21 21:13:49,421 - __main__ - INFO - Scheduler started.
+2025-02-21 21:13:49,423 - apscheduler.scheduler - INFO - Added job "schedule_file_conversion.<locals>.scheduled_task" to job store "default"
+2025-02-21 21:13:49,423 - apscheduler.scheduler - INFO - Scheduler started
+2025-02-21 21:14:17,050 - apscheduler.executors.default - INFO - Running job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 21:16:17 IST)" (scheduled at 2025-02-21 21:14:17.036744+05:30)
+2025-02-21 21:14:17,058 - __main__ - INFO - File conversion task completed successfully.
+2025-02-21 21:14:17,059 - apscheduler.executors.default - INFO - Job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 21:16:17 IST)" executed successfully
+2025-02-21 21:15:49,431 - apscheduler.executors.default - INFO - Running job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 21:15:49 IST)" (scheduled at 2025-02-21 21:15:49.421149+05:30)
+2025-02-21 21:15:49,445 - __main__ - INFO - File conversion task completed successfully.
+2025-02-21 21:15:49,445 - apscheduler.executors.default - INFO - Job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 21:17:49 IST)" executed successfully
+2025-02-21 21:16:17,048 - apscheduler.executors.default - INFO - Running job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 21:18:17 IST)" (scheduled at 2025-02-21 21:16:17.036744+05:30)
+2025-02-21 21:16:17,059 - __main__ - INFO - File conversion task completed successfully.
+2025-02-21 21:16:17,060 - apscheduler.executors.default - INFO - Job "schedule_file_conversion.<locals>.scheduled_task (trigger: interval[0:02:00], next run at: 2025-02-21 21:18:17 IST)" executed successfully
+2025-02-21 21:20:00,412 - apscheduler.scheduler - INFO - Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2025-02-21 21:20:00,413 - __main__ - INFO - Scheduler started.
+2025-02-21 21:20:00,414 - apscheduler.scheduler - INFO - Added job "schedule_file_conversion.<locals>.scheduled_task" to job store "default"
+2025-02-21 21:20:00,415 - apscheduler.scheduler - INFO - Scheduler started
