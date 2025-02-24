@@ -1,0 +1,5 @@
+2025-02-23 12:59:04,707 - INFO - Logging setup complete. Logs will be stored in app.log.
+2025-02-23 12:59:05,318 - INFO - CSV data read successfully from emails.csv
+2025-02-23 12:59:05,321 - INFO - Email task saved successfully for user: poovarasanvr2004@gmail.com
+2025-02-23 12:59:05,322 - INFO - Scheduled email automation task for John Doe at 12:59 daily
+2025-02-23 12:59:05,323 - INFO - Waiting for 86394.676523 seconds until the scheduled time.
