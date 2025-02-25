@@ -1,123 +1,122 @@
-import smtplib
-import os
 import csv
 import logging
+import os
 import re
-import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.mime.base import MIMEBase
-from email import encoders
-from config import EMAIL_SENDER, EMAIL_PASSWORD, SMTP_SERVER, SMTP_PORT
+from smtplib import SMTP
+from config import RECIPIENTS_CSV_PATH, SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
 
-# Configure logging
-logging.basicConfig(filename='email_errors.log', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+log_file_path = os.path.abspath("app.log")
+
+logging.basicConfig(
+    filename=log_file_path,
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",  # Corrected format string
+    filemode="w",  # Overwrites each time, use "a" to append
+    force=True,  # Ensures the config is applied even if logging was already set
+)
+
+# Add console logging (optional)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+console_handler.setFormatter(formatter)
+logging.getLogger().addHandler(console_handler)
+
+logging.info("Logging setup complete. Logs will be stored in app.log.")
 
 def is_valid_email(email):
-    regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(regex, email) is not None
 
-def send_emails(task):
-    from database import save_email_log  # Import inside the function to avoid circular import
-
-    emails = task["emails"]
-    subject = task["subject"]
-    message = task["message"]
-    attachment = task.get("attachment", None)
-    user_details = task["user_details"]
-
-    print(f"Running Email Automation with:\n"
-          f"  📧 Emails: {len(emails)} recipients\n"
-          f"  📝 Subject: {subject}\n"
-          f"  💬 Message: {message}\n"
-          f"  📎 Attachment: {attachment if attachment else 'None'}\n"
-          f"  👤 User: {user_details['name']} ({user_details['email']})\n")
-
-    if not EMAIL_SENDER or not EMAIL_PASSWORD:
-        print("❌ ERROR: Email credentials missing. Check .env file!")
-        return
-
-    for email in emails:
-        if not is_valid_email(email):
-            continue  # Skip invalid email addresses
-
-        msg = MIMEMultipart()
-        msg["From"] = EMAIL_SENDER
-        msg["To"] = email
-        msg["Subject"] = subject
-        msg.attach(MIMEText(message, "plain"))
-
-        if attachment:
-            try:
-                with open(attachment, "rb") as attachment_file:
-                    part = MIMEBase("application", "octet-stream")
-                    part.set_payload(attachment_file.read())
-                    encoders.encode_base64(part)
-                    part.add_header(
-                        "Content-Disposition",
-                        f"attachment; filename= {os.path.basename(attachment)}",
-                    )
-                    msg.attach(part)
-            except FileNotFoundError:
-                print(f"❌ ERROR: Attachment file {attachment} not found!")
-                continue
-
-        try:
-            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-            server.starttls()
-            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-            server.sendmail(EMAIL_SENDER, email, msg.as_string())
-            server.quit()
-
-            print(f"✅ Email sent successfully to {email}")
-            save_email_log(email, subject, message, "sent")
-
-        except Exception as e:
-            error_message = str(e)
-            logging.error(f"Failed to send email to {email} - Reason: {error_message}")
-            save_email_log(email, subject, message, "failed", error_message)
-            print(f"❌ Failed to send email to {email} - Check email_errors.log for details")
-
-def email_automation(args):
-    from database import save_email_task, save_user_details_in_task  # Import inside the function to avoid circular import
-
+def read_recipients_from_csv(file_path):
+    valid_recipients = []
+    invalid_recipients = []
     try:
-        with open(args['file'], "r") as f:
-            reader = csv.reader(f)
-            emails = [row[0] for row in reader if row]
+        with open(file_path, mode='r') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                email = row[0].strip()
+                if is_valid_email(email):
+                    valid_recipients.append(email)
+                else:
+                    invalid_recipients.append(email)
+                    logging.warning(f"Invalid email address found: {email}")
     except FileNotFoundError:
-        print(f"❌ ERROR: File {args['file']} not found!")
+        logging.error(f"CSV file not found: {file_path}")
+    return valid_recipients, invalid_recipients
+
+def create_email(recipient_email, user_data):
+    email_template = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Email Template</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; }}
+            .container {{ width: 80%; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; }}
+            .header {{ text-align: center; padding-bottom: 20px; }}
+            .content {{ margin-bottom: 20px; }}
+            .footer {{ text-align: center; font-size: 0.9em; color: #777; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Hello, {name}!</h1>
+            </div>
+            <div class="content">
+                <p>{message}</p>
+            </div>
+            <div class="footer">
+                <p>Best regards,<br>Your Company</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    try:
+        email_content = email_template.format(name=user_data['name'], message=user_data['message'])
+    except KeyError as e:
+        logging.error(f"Missing key in user data for template: {e}")
+        return None
+
+    msg = MIMEMultipart()
+    msg['From'] = SMTP_USER
+    msg['To'] = recipient_email
+    msg['Subject'] = user_data['subject']
+    msg.attach(MIMEText(email_content, 'html'))
+    return msg
+
+def send_email(msg):
+    try:
+        with SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(msg)
+            logging.info(f"Email sent to {msg['To']}")
+    except Exception as e:
+        logging.error(f"Failed to send email to {msg['To']}: {e}")
+
+def process_email_task(user_data):
+    valid_recipients, invalid_recipients = read_recipients_from_csv(RECIPIENTS_CSV_PATH)
+    
+    if invalid_recipients:
+        logging.warning(f"Invalid email addresses found: {', '.join(invalid_recipients)}")
+        print(f"Invalid email addresses found: {', '.join(invalid_recipients)}")
+    
+    if not valid_recipients:
+        logging.error("No valid email addresses found. Aborting email sending.")
+        print("No valid email addresses found. Aborting email sending.")
         return
+    
+    for recipient in valid_recipients:
+        msg = create_email(recipient, user_data)
+        if msg:
+            send_email(msg)
 
-    valid_emails = [email for email in emails if is_valid_email(email)]
-    invalid_emails = [email for email in emails if not is_valid_email(email)]
-
-    if invalid_emails:
-        print("❌ Invalid email addresses found:")
-        for email in invalid_emails:
-            print(f"  - {email}")
-
-    if not valid_emails:
-        print("No valid email addresses to send.")
-        return
-
-    if not args['user_name']:
-        print("❌ ERROR: User name is required!")
-        return
-
-    user_details = {
-        "user_id": f"{args['user_email']}_{uuid.uuid4()}",
-        "name": args['user_name'],
-        "email": args['user_email']
-    }
-
-    task = {
-        "emails": valid_emails,
-        "subject": args['subject'],
-        "message": args['message'],
-        "attachment": getattr(args, "attachment", None),
-        "user_details": user_details
-    }
-
-    save_email_task(valid_emails, args['subject'], args['message'], task.get("attachment", None), args.get('schedule'), user_details)
-    send_emails(task)
+    logging.info("Email processing completed.")
