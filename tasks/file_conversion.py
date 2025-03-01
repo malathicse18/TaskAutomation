@@ -1,15 +1,38 @@
 import os
 import argparse
-from apscheduler.schedulers.background import BackgroundScheduler
-from datetime import datetime
 import time
+from datetime import datetime
+from apscheduler.schedulers.background import BackgroundScheduler
+from pymongo import MongoClient
+
+# Database setup
+client = MongoClient("mongodb://localhost:27017/")
+db = client["file_conversion_db"]
+tasks_collection = db["tasks"]
+logs_collection = db["logs"]
+
+def log_task(directory, ext, format, status, message):
+    """Log task details in the database."""
+    logs_collection.insert_one({
+        "directory": directory,
+        "extension": ext,
+        "format": format,
+        "status": status,
+        "message": message,
+        "timestamp": datetime.now()
+    })
 
 def convert_files(directory, ext, format):
     """Function to simulate file conversion."""
-    print(f"Converting all {ext} files in {directory} to {format} at {datetime.now()}...")
-    # Simulated processing delay
-    time.sleep(2)
-    print("Conversion complete!")
+    try:
+        print(f"Converting all {ext} files in {directory} to {format} at {datetime.now()}...")
+        # Simulated processing delay
+        time.sleep(2)
+        log_task(directory, ext, format, "Success", "Conversion complete")
+        print("Conversion complete!")
+    except Exception as e:
+        log_task(directory, ext, format, "Failed", str(e))
+        print(f"Conversion failed: {e}")
 
 def schedule_conversion(directory, ext, format, mode, interval=None, run_date=None, cron_time=None):
     scheduler = BackgroundScheduler()
@@ -27,6 +50,19 @@ def schedule_conversion(directory, ext, format, mode, interval=None, run_date=No
     
     scheduler.start()
     print("Scheduler started. Press Ctrl+C to exit.")
+    
+    # Store scheduled task in database
+    tasks_collection.insert_one({
+        "directory": directory,
+        "extension": ext,
+        "format": format,
+        "mode": mode,
+        "interval": interval,
+        "run_date": run_date,
+        "cron_time": cron_time,
+        "status": "Scheduled",
+        "timestamp": datetime.now()
+    })
     
     try:
         while True:
