@@ -1,44 +1,49 @@
-from fpdf import FPDF
 import os
+import argparse
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
+import time
 
-def file_conversion(args):
-    input_directory = args.input_directory
-    convert_all_text_files(input_directory)
+def convert_files(directory, ext, format):
+    """Function to simulate file conversion."""
+    print(f"Converting all {ext} files in {directory} to {format} at {datetime.now()}...")
+    # Simulated processing delay
+    time.sleep(2)
+    print("Conversion complete!")
 
-def convert_all_text_files(directory):
-    for filename in os.listdir(directory):
-        if filename.endswith(".txt"):
-            input_file = os.path.join(directory, filename)
-            output_file = os.path.join(directory, os.path.splitext(filename)[0] + ".pdf")
-            output_file = get_unique_filename(output_file)
-            convert_text_to_pdf(input_file, output_file)
-
-def get_unique_filename(output_file):
-    base, extension = os.path.splitext(output_file)
-    counter = 1
-    new_output_file = output_file
-
-    while os.path.exists(new_output_file):
-        new_output_file = f"{base}_{counter}{extension}"
-        counter += 1
-
-    return new_output_file
-
-def convert_text_to_pdf(input_file, output_file):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-
-    with open(input_file, 'r') as file:
-        for line in file:
-            pdf.cell(200, 10, txt=line, ln=True)
-
-    pdf.output(output_file)
-    print(f"Converted {input_file} to {output_file}")
+def schedule_conversion(directory, ext, format, mode, interval=None, run_date=None, cron_time=None):
+    scheduler = BackgroundScheduler()
+    
+    if mode == 'interval':
+        scheduler.add_job(convert_files, 'interval', minutes=interval, args=[directory, ext, format])
+    elif mode == 'cron':
+        hour, minute = map(int, cron_time.split(':'))
+        scheduler.add_job(convert_files, 'cron', hour=hour, minute=minute, args=[directory, ext, format])
+    elif mode == 'date':
+        scheduler.add_job(convert_files, 'date', run_date=run_date, args=[directory, ext, format])
+    else:
+        print("Invalid scheduling mode!")
+        return
+    
+    scheduler.start()
+    print("Scheduler started. Press Ctrl+C to exit.")
+    
+    try:
+        while True:
+            time.sleep(1)
+    except (KeyboardInterrupt, SystemExit):
+        scheduler.shutdown()
+        print("Scheduler stopped.")
 
 if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Convert text files in a directory to PDF")
-    parser.add_argument("-d", "--input_directory", required=True, help="Input directory containing text files")
+    parser = argparse.ArgumentParser(description="Schedule file conversion tasks.")
+    parser.add_argument("--dir", required=True, help="Directory containing files")
+    parser.add_argument("--ext", required=True, help="File extension to convert")
+    parser.add_argument("--format", required=True, help="Target file format")
+    parser.add_argument("--mode", required=True, choices=["interval", "cron", "date"], help="Scheduling mode")
+    parser.add_argument("--interval", type=int, help="Interval time in minutes (for interval mode)")
+    parser.add_argument("--run_date", help="Run date in YYYY-MM-DD HH:MM:SS format (for date mode)")
+    parser.add_argument("--cron_time", help="Execution time in HH:MM format (for cron mode)")
+    
     args = parser.parse_args()
-    file_conversion(args)
+    schedule_conversion(args.dir, args.ext, args.format, args.mode, args.interval, args.run_date, args.cron_time)
