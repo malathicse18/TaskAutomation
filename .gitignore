@@ -6,6 +6,7 @@ venv/
 
 # Ignore specific log file
 app.log
+.log
 
 # Ignore Python cache files
 __pycache__/
