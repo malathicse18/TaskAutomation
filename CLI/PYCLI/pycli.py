@@ -1,6 +1,18 @@
 import argparse
 import time
-from scheduler.scheduler import schedule_conversion
+import sys
+import os
+from dotenv import load_dotenv
+# Load environment variables
+load_dotenv()
+# Add the project root directory (Automation) to sys.path
+project_root = os.getenv("PROJECT_ROOT", os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+sys.path.append(project_root)
+try:
+    from scheduler.scheduler import schedule_conversion
+except ModuleNotFoundError as e:
+    print(f"❌ Module import error: {e}")
+    sys.exit(1)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Schedule file conversion tasks.")
