@@ -7,6 +7,7 @@ venv/
 # Ignore specific log file
 app.log
 .log
+tasks/conversion.log
 
 # Ignore Python cache files
 __pycache__/
