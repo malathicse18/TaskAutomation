@@ -1,6 +1,7 @@
 import os
 import argparse
 import time
+import threading
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from pymongo import MongoClient
@@ -26,8 +27,7 @@ def convert_files(directory, ext, format):
     """Function to simulate file conversion."""
     try:
         print(f"Converting all {ext} files in {directory} to {format} at {datetime.now()}...")
-        # Simulated processing delay
-        time.sleep(2)
+        time.sleep(2)  # Simulated processing delay
         log_task(directory, ext, format, "Success", "Conversion complete")
         print("Conversion complete!")
     except Exception as e:
@@ -49,8 +49,8 @@ def schedule_conversion(directory, ext, format, mode, interval=None, run_date=No
         return
     
     scheduler.start()
-    print("Scheduler started. Press Ctrl+C to exit.")
-    
+    print("Scheduler started in the background.")
+
     # Store scheduled task in database
     tasks_collection.insert_one({
         "directory": directory,
@@ -63,13 +63,10 @@ def schedule_conversion(directory, ext, format, mode, interval=None, run_date=No
         "status": "Scheduled",
         "timestamp": datetime.now()
     })
-    
-    try:
-        while True:
-            time.sleep(1)
-    except (KeyboardInterrupt, SystemExit):
-        scheduler.shutdown()
-        print("Scheduler stopped.")
+
+    # Run the scheduler in a separate daemon thread (so the main script exits cleanly)
+    thread = threading.Thread(target=lambda: time.sleep(999999), daemon=True)
+    thread.start()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Schedule file conversion tasks.")
@@ -83,3 +80,5 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     schedule_conversion(args.dir, args.ext, args.format, args.mode, args.interval, args.run_date, args.cron_time)
+
+    print("Main script exiting, but the scheduler is running in the background.")
