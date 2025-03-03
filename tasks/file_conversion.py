@@ -4,8 +4,11 @@ import logging
 from db.logs_collection import log_task
 
 # Configure logging
-logging.basicConfig(filename="logs/conversion.log", level=logging.DEBUG,
-                    format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    filename="logs/conversion.log",
+    level=logging.DEBUG,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 def convert_files(directory, ext, format):
     """Convert files from one format to another."""
@@ -30,14 +33,23 @@ def convert_files(directory, ext, format):
                     continue
 
                 try:
-                    df = pd.read_csv(src, delimiter="\t")
-                    df.to_csv(dst, index=False)
+                    if os.path.getsize(src) == 0:
+                        # Create an empty target file if the source file is empty
+                        open(dst, 'w').close()
+                        logging.info(f"Converted empty file: {src} → {dst}")
+                    else:
+                        df = pd.read_csv(src, delimiter="\t")
+                        df.to_csv(dst, index=False)
+                        logging.info(f"Converted: {src} → {dst}")
+
                     converted_files.append(dst)
-                    logging.info(f"Converted: {src} → {dst}")
+                except pd.errors.ParserError:
+                    logging.error(f"Parsing error in file: {src}")
                 except Exception as file_error:
                     logging.error(f"Error converting {src}: {file_error}")
 
-        log_task(directory, ext, format, "Success", f"Converted {len(converted_files)} files")
+        status = "Success" if converted_files else "No files converted"
+        log_task(directory, ext, format, status, f"Converted {len(converted_files)} files")
         logging.info("File conversion process completed")
     except Exception as e:
         log_task(directory, ext, format, "Failed", str(e))

@@ -1,8 +1,15 @@
 from pymongo import MongoClient, errors
 import logging
+import os
+
+# Ensure logs directory exists
+log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
 
 # Configure logging
-logging.basicConfig(filename="logs/db.log", level=logging.DEBUG,
+log_file = os.path.join(log_dir, "db.log")
+logging.basicConfig(filename=log_file, level=logging.DEBUG,
                     format="%(asctime)s - %(levelname)s - %(message)s")
 
 def get_db():
