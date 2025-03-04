@@ -3,16 +3,23 @@ import pandas as pd
 import logging
 from db.logs_collection import log_task
 
-# Configure logging
+# Ensure logs directory exists
+log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../logs"))
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
+# Configure logging to use db.log
+log_file = os.path.join(log_dir, "db.log")
 logging.basicConfig(
-    filename="logs/conversion.log",
-    level=logging.DEBUG,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    filename=log_file,
+    level=logging.DEBUG,  # Set to DEBUG for troubleshooting
+    format="%(asctime)s - %(levellevel)s - %(message)s"
 )
 
 def convert_files(directory, ext, format):
     """Convert files from one format to another."""
     try:
+        print("Starting file conversion process")
         logging.info("Starting file conversion process")
         converted_files = []
 
